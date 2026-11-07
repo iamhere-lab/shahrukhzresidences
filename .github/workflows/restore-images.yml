@@ -1,0 +1,53 @@
+name: Restore site images (one-time)
+
+# Pulls assets/img out of the site zip that was committed earlier (still in git history),
+# commits the images into assets/img, removes the export wrapper from index.html,
+# deletes the placeholder Test file, and finally deletes this workflow.
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/restore-images.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore images from the zip in history
+        run: |
+          set -e
+          C="$(git log --diff-filter=A --format=%H -- '*.zip' | tail -n 1)"
+          Z="$(git ls-tree -r --name-only "$C" | grep -i '\.zip$' | head -n 1)"
+          echo "Zip: $Z (commit $C)"
+          git show "$C:$Z" > /tmp/site.zip
+          rm -rf /tmp/site && mkdir -p /tmp/site && unzip -q /tmp/site.zip -d /tmp/site
+          mkdir -p assets/img
+          cp -n /tmp/site/assets/img/* assets/img/
+          rm -f assets/img/Test
+          ls assets/img | wc -l
+      - name: Remove the export wrapper from index.html
+        run: |
+          python3 - <<'PY'
+          import re, pathlib
+          p = pathlib.Path("index.html"); s = p.read_text(encoding="utf-8")
+          m = list(re.finditer(r"<!DOCTYPE html>", s, re.I))
+          if len(m) > 1:
+              s = s[m[1].start():]
+              s = s[: s.lower().find("</html>") + 7] + "\n"
+              p.write_text(s, encoding="utf-8")
+              print("index.html cleaned")
+          PY
+      - name: Commit and remove this workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -q .github/workflows/restore-images.yml
+          git add -A
+          git commit -m "Restore site images into assets/img and clean index.html"
+          git push
