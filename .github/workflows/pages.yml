@@ -1,0 +1,51 @@
+name: Deploy site to GitHub Pages
+
+# Unpacks the site zip in the repo root and publishes it to GitHub Pages.
+# To update the site: upload a new zip (replace the old one) and this runs again.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack site
+        run: |
+          set -e
+          ZIP="$(ls -t *.zip | head -n 1)"
+          echo "Using $ZIP"
+          mkdir -p _site
+          unzip -o -q "$ZIP" -d _site
+          touch _site/.nojekyll
+          # The artifact export wraps index.html in an extra skeleton; keep only the real document.
+          python3 - <<'PY'
+          import re, pathlib
+          p = pathlib.Path("_site/index.html"); s = p.read_text(encoding="utf-8")
+          m = list(re.finditer(r"<!DOCTYPE html>", s, re.I))
+          if len(m) > 1:
+              s = s[m[1].start():]
+              s = s[: s.lower().find("</html>") + 7] + "\n"
+              p.write_text(s, encoding="utf-8")
+          PY
+          ls -la _site | head -20
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
