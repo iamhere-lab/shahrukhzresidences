@@ -22,11 +22,11 @@ window.SS_CONFIG = {
   gtmId: "",
 
   /* Phone shown on the page. CONFIRM the sales / channel-partner number for this project before launch. */
-  phoneDisplay: "74069 17711",
-  phoneE164: "+917406917711",
+  phoneDisplay: "50 688 2021",
+  phoneE164: "+971506882021",
 
   /* WhatsApp number, digits only with country code. WhatsApp buttons stay hidden until set. */
-  whatsappNumber: "917406917711",
+  whatsappNumber: "971506882021",
   whatsappMessage: "Hi, I'm interested in Shahrukhz Residences by Danube, Dubai Maritime City. Please share the price list, floor plans and payment plan.",
 
   /* Auto-open the enquiry popup after this many seconds (once per session). 0 disables. */
