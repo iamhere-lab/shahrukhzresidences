@@ -1,0 +1,45 @@
+name: Update phone number (one-time)
+
+# Replaces +91 74069 17711 with +971 50 688 2021 across the site (calls, WhatsApp, header,
+# thank-you page, config), commits the change and deletes this workflow.
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/update-phone.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace the number
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          R = [("917406917711", "971506882021"),
+               ('+91 <span class="js-phone-text">74069&nbsp;17711', '+971 <span class="js-phone-text">50&nbsp;688&nbsp;2021'),
+               ("+91 74069&nbsp;17711", "+971 50&nbsp;688&nbsp;2021"),
+               ("+91 74069 17711", "+971 50 688 2021"),
+               ("74069 17711", "50 688 2021")]
+          for f in ["index.html", "thank-you.html", "assets/js/config.js", "assets/js/main.js"]:
+              p = pathlib.Path(f)
+              if not p.exists():
+                  print("missing", f); continue
+              s = p.read_text(encoding="utf-8"); n = s
+              for a, b in R: n = n.replace(a, b)
+              left = n.count("7406917711") + n.count("74069")
+              print(f, "changed" if n != s else "unchanged", "| old number left:", left)
+              p.write_text(n, encoding="utf-8")
+          PY
+      - name: Commit and remove this workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -q .github/workflows/update-phone.yml
+          git add -A
+          git commit -m "Update sales number to +971 50 688 2021"
+          git push
