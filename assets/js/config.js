@@ -8,7 +8,7 @@ window.SS_CONFIG = {
    * (Pabbly / Zapier / Make webhook, Google Apps Script, Leadrat proxy).
    * Empty until a real endpoint exists: the form then refuses to submit
    * and offers the phone number instead of showing a fake success message. */
-  leadEndpoint: "",
+  leadEndpoint: "https://connect.pabbly.com/webhook-listener/webhook/IjU3NjUwNTY1MDYzNTA0MzY1MjZjNTUzNyI_3D_pc/IjU3NjcwNTZiMDYzNDA0M2M1MjZhNTUzNDUxM2Ei_pc",
 
   /* "form" = URL-encoded POST without a CORS preflight (right for Pabbly / Zapier / Make webhooks).
    * "json" = JSON POST (for your own endpoint that answers CORS). */
