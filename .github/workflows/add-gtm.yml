@@ -1,0 +1,47 @@
+name: Add GTM snippet (one-time)
+
+# Pastes the GTM-PN8B3PGS snippet immediately after <head> on every page,
+# commits the change and deletes this workflow.
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/add-gtm.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  gtm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Insert snippet after <head>
+        run: |
+          python3 - <<'PY'
+          import re, pathlib
+          snip = (
+              '<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-PN8B3PGS"></script>\n'
+              '<script>\n'
+              '  window.dataLayer = window.dataLayer || [];\n'
+              '  function gtag(){dataLayer.push(arguments);}\n'
+              "  gtag('js', new Date());\n"
+              '</script>\n'
+          )
+          for p in pathlib.Path('.').rglob('*.html'):
+              if '.git' in p.parts: continue
+              s = p.read_text(encoding='utf-8')
+              if 'GTM-PN8B3PGS' in s:
+                  print(p, 'already has it'); continue
+              n, k = re.subn(r'(<head[^>]*>)\s*', lambda m: m.group(1) + '\n' + snip, s, count=1, flags=re.I)
+              print(p, 'inserted' if k else 'NO <head> FOUND')
+              if k: p.write_text(n, encoding='utf-8')
+          PY
+      - name: Commit and remove this workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -q .github/workflows/add-gtm.yml
+          git add -A
+          git commit -m "Add GTM-PN8B3PGS snippet after <head> on every page"
+          git push
