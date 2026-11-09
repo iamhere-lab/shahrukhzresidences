@@ -259,7 +259,12 @@
       req.headers = { "Content-Type": CFG.leadEndpointSimpleRequest ? "text/plain;charset=utf-8" : "application/json" };
       req.body = JSON.stringify(payload);
     }
-    fetch(CFG.leadEndpoint, req).then(function (res) {
+    var beaconSent = false;
+    if (mode === "form" && navigator.sendBeacon) {
+      try { beaconSent = navigator.sendBeacon(CFG.leadEndpoint, new Blob([req.body], { type: "application/x-www-form-urlencoded;charset=UTF-8" })); } catch (e) {}
+    }
+    req.keepalive = true;
+    (beaconSent ? Promise.resolve({ type: "opaque", ok: true }) : fetch(CFG.leadEndpoint, req)).then(function (res) {
       clearTimeout(timer);
       if (res.type !== "opaque" && !res.ok) throw new Error("HTTP " + res.status);
       submitted = true; ss("ss_lead", "1"); rememberLead(phoneKey); unlockPlans();
