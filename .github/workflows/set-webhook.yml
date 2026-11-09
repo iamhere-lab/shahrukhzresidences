@@ -1,0 +1,37 @@
+name: Connect Pabbly webhook (one-time)
+
+# Sets the Pabbly webhook as the lead destination for every form (assets/js/config.js),
+# commits the change and deletes this workflow.
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/set-webhook.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  hook:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set leadEndpoint
+        run: |
+          python3 - <<'PY'
+          import re, pathlib
+          url = "https://connect.pabbly.com/webhook-listener/webhook/IjU3NjUwNTY1MDYzNTA0MzY1MjZjNTUzNyI_3D_pc/IjU3NjcwNTZiMDYzNDA0M2M1MjZhNTUzNDUxM2Ei_pc"
+          p = pathlib.Path("assets/js/config.js"); s = p.read_text(encoding="utf-8")
+          s, n = re.subn(r'leadEndpoint:\s*"[^"]*"', 'leadEndpoint: "' + url + '"', s, count=1)
+          s = re.sub(r'leadEndpointMode:\s*"[^"]*"', 'leadEndpointMode: "form"', s, count=1)
+          assert n == 1, "leadEndpoint not found"
+          p.write_text(s, encoding="utf-8"); print("config.js updated")
+          PY
+      - name: Commit and remove this workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -q .github/workflows/set-webhook.yml
+          git add -A
+          git commit -m "Send form leads to the Pabbly webhook"
+          git push
